@@ -34,7 +34,25 @@ def generate_launch_description() :
         ],
     )
 
+    package_name = "cartographer_slam"
+
+    rviz_config_file_path = os.path.join(
+        get_package_share_directory(package_name),
+        'rviz',
+        'mapping.rviz'
+    )
+
+    rviz2_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        arguments=['-d ', rviz_config_file_path],
+        parameters=[{"use_sim_time" : True}]
+    )
+
     return LaunchDescription([
         cartographer_node,
         occupancy_grid_node,
+        rviz2_node
     ])
