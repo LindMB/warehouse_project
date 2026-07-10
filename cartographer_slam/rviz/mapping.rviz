@@ -6,10 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Map1
+        - /Map1/Status1
         - /Map1/Topic1
         - /LaserScan1/Topic1
-        - /TF1
-        - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 548
   - Class: rviz_common/Selection
@@ -49,7 +49,7 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 10
-      Reference Frame: <Fixed Frame>
+      Reference Frame: map
       Value: true
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
@@ -61,7 +61,7 @@ Visualization Manager:
         Depth: 5
         Durability Policy: Transient Local
         Filter size: 10
-        History Policy: Keep All
+        History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /map
       Update Topic:
@@ -71,6 +71,62 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /map_updates
       Use Timestamp: false
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        robot_base_docking_contact_link:
+          Value: true
+        robot_base_footprint:
+          Value: true
+        robot_base_link:
+          Value: true
+        robot_evelator_base_link:
+          Value: true
+        robot_front_cover_link:
+          Value: true
+        robot_front_laser_base_link:
+          Value: true
+        robot_omni_backwheel_link:
+          Value: true
+        robot_omni_front_leftwheel_link:
+          Value: true
+        robot_omni_front_rightwheel_link:
+          Value: true
+        robot_top_cover_link:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          odom:
+            robot_base_footprint:
+              robot_base_link:
+                robot_evelator_base_link:
+                  {}
+                robot_front_cover_link:
+                  robot_base_docking_contact_link:
+                    {}
+                robot_front_laser_base_link:
+                  {}
+                robot_omni_backwheel_link:
+                  {}
+                robot_omni_front_leftwheel_link:
+                  {}
+                robot_omni_front_rightwheel_link:
+                  {}
+              robot_top_cover_link:
+                {}
+      Update Interval: 0
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -105,62 +161,6 @@ Visualization Manager:
         Value: /scan
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
-    - Class: rviz_default_plugins/TF
-      Enabled: true
-      Frame Timeout: 15
-      Frames:
-        All Enabled: false
-        map:
-          Value: true
-        odom:
-          Value: true
-        robot_base_docking_contact_link:
-          Value: false
-        robot_base_footprint:
-          Value: true
-        robot_base_link:
-          Value: false
-        robot_evelator_base_link:
-          Value: false
-        robot_front_cover_link:
-          Value: false
-        robot_front_laser_base_link:
-          Value: false
-        robot_omni_backwheel_link:
-          Value: false
-        robot_omni_front_leftwheel_link:
-          Value: false
-        robot_omni_front_rightwheel_link:
-          Value: false
-        robot_top_cover_link:
-          Value: false
-      Marker Scale: 1
-      Name: TF
-      Show Arrows: true
-      Show Axes: true
-      Show Names: true
-      Tree:
-        map:
-          odom:
-            robot_base_footprint:
-              robot_base_link:
-                robot_evelator_base_link:
-                  {}
-                robot_front_cover_link:
-                  robot_base_docking_contact_link:
-                    {}
-                robot_front_laser_base_link:
-                  {}
-                robot_omni_backwheel_link:
-                  {}
-                robot_omni_front_leftwheel_link:
-                  {}
-                robot_omni_front_rightwheel_link:
-                  {}
-              robot_top_cover_link:
-                {}
-      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
@@ -208,25 +208,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 13.734903335571289
+      Distance: 16.872995376586914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.0152618885040283
-        Y: -0.29550236463546753
-        Z: -0.87110835313797
+        X: 2.000152111053467
+        Y: -1.7397241592407227
+        Z: -0.15988244116306305
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7003980875015259
+      Pitch: 0.8003979921340942
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.2853977382183075
+      Yaw: 0.8153980374336243
     Saved: ~
 Window Geometry:
   Displays:
@@ -244,5 +244,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 110
-  Y: 0
+  X: 60
+  Y: 60
