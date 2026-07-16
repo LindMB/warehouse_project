@@ -1,21 +1,29 @@
 import os
 from launch import LaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.actions import DeclareLaunchArgument
 
 from launch_ros.actions import Node
-from ament_index_python import get_package_share_directory
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
 
     package_name = "map_server"
-    
-    map_file_name = "warehouse_map_sim.yaml"
 
-    map_path = os.path.join(
-        get_package_share_directory(package_name),
-        "config",
-        map_file_name
+    map_file = LaunchConfiguration("map_file")
+
+    map_file_arg = DeclareLaunchArgument(
+        "map_file",
+        default_value="warehouse_map_sim.yaml",
+        description="Name of the map file name to read by the map_server"
     )
+
+    map_path = PathJoinSubstitution([
+        FindPackageShare(package_name),
+        "config",
+        map_file
+    ])
 
     map_server_node = Node(
         package="nav2_map_server",
@@ -46,11 +54,11 @@ def generate_launch_description():
         ],
     )
 
-    rviz_config_file_path = os.path.join(
-        get_package_share_directory(package_name),
+    rviz_config_file_path = PathJoinSubstitution([
+        FindPackageShare(package_name),
         'rviz',
         'map_display.rviz'
-    )
+    ])
 
     rviz2_node = Node(
         package="rviz2",
@@ -62,6 +70,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        map_file_arg,
         map_server_node,
         rviz2_node,
         lifecycle_manager_node,
