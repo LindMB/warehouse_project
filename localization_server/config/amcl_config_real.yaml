@@ -57,8 +57,8 @@ amcl:
     # Update Trigger
     # ------------------------------------------------------------------
 
-    update_min_d: 0.25
-    update_min_a: 0.2
+    update_min_d: 0.1
+    update_min_a: 0.1
     save_pose_rate: 0.5
     gui_publish_rate: 10.0
 
