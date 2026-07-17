@@ -70,9 +70,9 @@ def generate_launch_description() :
     )
 
     rviz_config_file_path = PathJoinSubstitution([
-        FindPackageShare("map_server"),
+        FindPackageShare("localization_server"),
         'rviz',
-        'map_display.rviz'
+        'localization.rviz'
     ])
 
     rviz2_node = Node(
