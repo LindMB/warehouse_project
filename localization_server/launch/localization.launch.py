@@ -1,6 +1,6 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -35,10 +35,18 @@ def generate_launch_description() :
         ],
     )
 
+    amcl_config_yaml_filename = PythonExpression([
+        "'amcl_config_real.yaml' "
+        "if '",
+        map_file,
+        "' == 'warehouse_map_real.yaml' "
+        "else 'amcl_config_sim.yaml'"
+    ])
+
     amcl_config_yaml_filepath = PathJoinSubstitution([
         FindPackageShare("localization_server"),
         "config",
-        "amcl_config_sim.yaml"
+        amcl_config_yaml_filename
     ])
 
     amcl_node = Node(
