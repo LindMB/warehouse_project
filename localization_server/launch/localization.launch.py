@@ -16,6 +16,13 @@ def generate_launch_description() :
         description="Name of the map file name to read by the map_server"
     )
 
+    use_sim_time = PythonExpression([
+        "False if '",
+        map_file,
+        "' == 'warehouse_map_real.yaml' "
+        "else True"
+    ])
+
     map_path = PathJoinSubstitution([
         FindPackageShare("map_server"),
         "config",
@@ -29,7 +36,7 @@ def generate_launch_description() :
         output="screen",
         parameters=[
             {
-                "use_sim_time": True,
+                "use_sim_time": use_sim_time,
                 "yaml_filename": map_path,
             },
         ],
@@ -56,7 +63,7 @@ def generate_launch_description() :
         output='screen',
         parameters=[
             amcl_config_yaml_filepath,
-            {"use_sim_time": True},
+            {"use_sim_time": use_sim_time},
         ]
     )
 
@@ -67,7 +74,7 @@ def generate_launch_description() :
         output="screen",
         parameters=[
             {
-                "use_sim_time": True,
+                "use_sim_time": use_sim_time,
                 "autostart": True,
                 "node_names": [
                     "map_server",
@@ -89,7 +96,7 @@ def generate_launch_description() :
         name="rviz2",
         output="screen",
         arguments=["-d", rviz_config_file_path],
-        parameters=[{"use_sim_time" : True}]
+        parameters=[{"use_sim_time" : use_sim_time}]
     )
 
     return LaunchDescription([
