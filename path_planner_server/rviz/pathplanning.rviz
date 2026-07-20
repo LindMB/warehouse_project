@@ -6,9 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Global Costmap1
         - /Global Costmap1/Topic1
-        - /Local Costmap1
         - /Local Costmap1/Topic1
         - /Map1/Topic1
       Splitter Ratio: 0.5266821384429932
@@ -82,22 +80,18 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_evelator_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_evelator_platform_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_front_cover_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_front_laser_base_link:
           Alpha: 1
           Show Axes: false
@@ -132,7 +126,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Mass Properties:
         Inertia: false
         Mass: false
@@ -157,7 +150,7 @@ Visualization Manager:
         robot_base_link:
           Value: false
         robot_evelator_base_link:
-          Value: false
+          Value: true
         robot_front_cover_link:
           Value: false
         robot_front_laser_base_link:
@@ -231,7 +224,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Angle Tolerance: 0.10000000149011612
+    - Angle Tolerance: 0.05000000074505806
       Class: rviz_default_plugins/Odometry
       Covariance:
         Orientation:
@@ -249,7 +242,7 @@ Visualization Manager:
           Value: true
         Value: true
       Enabled: true
-      Keep: 100
+      Keep: 1
       Name: Odometry
       Position Tolerance: 0.10000000149011612
       Shape:
@@ -331,13 +324,13 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+      Color: 0; 255; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.029999999329447746
+      Line Width: 0.10000000149011612
       Name: Global Path Plan
       Offset:
         X: 0
@@ -359,19 +352,19 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+      Color: 170; 0; 255
       Enabled: true
-      Head Diameter: 0.30000001192092896
+      Head Diameter: 0.20000000298023224
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
+      Line Style: Billboards
+      Line Width: 0.03999999910593033
       Name: Local Path Plan
       Offset:
         X: 0
         Y: 0
         Z: 0
-      Pose Color: 255; 85; 255
+      Pose Color: 255; 255; 0
       Pose Style: None
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
@@ -386,7 +379,7 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/Polygon
-      Color: 25; 255; 0
+      Color: 0; 0; 255
       Enabled: true
       Name: Global Footprint
       Topic:
@@ -399,7 +392,7 @@ Visualization Manager:
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/Polygon
-      Color: 25; 255; 0
+      Color: 255; 85; 0
       Enabled: true
       Name: Local Footprint
       Topic:
@@ -477,17 +470,17 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 11.836922645568848
+      Distance: 10.879761695861816
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.375519275665283
-        Y: -0.31953221559524536
-        Z: -0.3509710729122162
-      Focal Shape Fixed Size: true
+        X: 2.7321789264678955
+        Y: -0.9442985653877258
+        Z: -0.06556213647127151
+      Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
@@ -495,7 +488,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.00039768218994140625
+      Yaw: 6.1585822105407715
     Saved: ~
 Window Geometry:
   Displays:
