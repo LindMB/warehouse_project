@@ -140,4 +140,11 @@ local_costmap:
         inflation_radius: 0.20
         cost_scaling_factor: 2.0
 
+      filters: ["keepout_filter"]
+
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: True
+        filter_info_topic: "/costmap_filter_info"
+
       always_send_full_costmap: true
