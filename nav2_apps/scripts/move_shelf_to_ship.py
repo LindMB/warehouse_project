@@ -1,11 +1,13 @@
 #! /usr/bin/env python3
 
 import rclpy
+import time
 
 from rclpy.duration import Duration
 from rclpy.parameter import Parameter
 
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point32, Polygon
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 from shelf_approach import ShelfApproach
@@ -95,7 +97,44 @@ def main():
             print('The final shelf approach failed.')
             exit(1)
 
+        ### Put the elevator up
         shelf_approach.put_elevator_up()
+
+        ### Update footprint shape from robot only to robot + shelf 
+        global_footprint_pub = navigator.create_publisher(
+            Polygon,
+            '/global_costmap/footprint',
+            10
+        )
+
+        local_footprint_pub = navigator.create_publisher(
+            Polygon,
+            '/local_costmap/footprint',
+            10
+        )
+
+        loaded_footprint = Polygon()
+
+        safety_margin = 0.05
+        x_val = 0.40 + safety_margin
+        y_val = 0.30 + safety_margin
+
+        # Rectangular shape definition (robot + shelf)
+        loaded_footprint.points = [
+            Point32(x=x_val, y=y_val, z=0.0),
+            Point32(x=x_val, y=-y_val, z=0.0),
+            Point32(x=-x_val, y=-y_val, z=0.0),
+            Point32(x=-x_val, y=y_val, z=0.0)
+        ]
+
+        print('Updating the robot footprint for shelf transport...')
+
+        # Publish the footprint several times so both Costmaps
+        # reliably receive the new geometry
+        for _ in range(5):
+            global_footprint_pub.publish(loaded_footprint)
+            local_footprint_pub.publish(loaded_footprint)
+            time.sleep(0.1)
 
     elif result == TaskResult.CANCELED:
         print('Navigation to loading_position was canceled.')
