@@ -3,14 +3,30 @@
 import rclpy
 
 from rclpy.duration import Duration
+from rclpy.parameter import Parameter
+
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+
+from shelf_approach import ShelfApproach
 
 
 def main():
     rclpy.init()
 
     navigator = BasicNavigator()
+
+    # Nav2 Simple Commander has to use the same clock as Gazebo, 
+    # TF, Nav2, LaserScan, Odometry
+    navigator.set_parameters([
+        Parameter(
+            'use_sim_time',
+            Parameter.Type.BOOL,
+            True
+        )
+    ])
+
+    shelf_approach = ShelfApproach()
 
     # Initial position of the robot in the warehouse map
     init_position = PoseStamped()
@@ -74,6 +90,12 @@ def main():
 
     if result == TaskResult.SUCCEEDED:
         print('The robot has reached loading_position.')
+
+        if not shelf_approach.move_under_shelf():
+            print('The final shelf approach failed.')
+            exit(1)
+
+        shelf_approach.put_elevator_up()
 
     elif result == TaskResult.CANCELED:
         print('Navigation to loading_position was canceled.')
