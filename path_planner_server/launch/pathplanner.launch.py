@@ -18,6 +18,11 @@ def generate_launch_description():
 
     package_share = FindPackageShare("path_planner_server")
 
+    filters_config = PathJoinSubstitution([
+        package_share,
+        "config",
+        "filters.yaml",
+    ])
 
     planner_config_file = PythonExpression([
         "'planner_sim.yaml' if ",
@@ -132,6 +137,24 @@ def generate_launch_description():
         ],
     )
 
+    filter_mask_server_node = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='filter_mask_server',
+        output='screen',
+        emulate_tty=True,
+        parameters=[filters_config]
+    )
+
+    costmap_filter_info_server_node = Node(
+        package='nav2_map_server',
+        executable='costmap_filter_info_server',
+        name='costmap_filter_info_server',
+        output='screen',
+        emulate_tty=True,
+        parameters=[filters_config]    
+    )
+
     lifecycle_manager_node = Node(
         package="nav2_lifecycle_manager",
         executable="lifecycle_manager",
@@ -147,6 +170,8 @@ def generate_launch_description():
                     "controller_server",
                     "behavior_server",
                     "bt_navigator",
+                    "filter_mask_server",
+                    "costmap_filter_info_server"
                 ],
             }
         ],
@@ -168,6 +193,8 @@ def generate_launch_description():
             controller_server_node,
             recoveries_server_node,
             bt_navigator_node,
+            filter_mask_server_node,
+            costmap_filter_info_server_node,
             lifecycle_manager_node,
             rviz2_node,
         ]
