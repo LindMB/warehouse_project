@@ -113,6 +113,12 @@ class ShelfApproach(Node):
             10
         )
 
+        self.elevator_down_pub = self.create_publisher(
+            String,
+            '/elevator_down',
+            10
+        )
+
 
         self.tf_buffer = Buffer()
 
@@ -683,6 +689,24 @@ class ShelfApproach(Node):
         time.sleep(2.0)
 
         print('The robot lifted the shelf successfully.')
+
+    def put_elevator_down(self):
+
+        elevator_msg = String()
+        elevator_msg.data = ''
+
+        print('Putting down the elevator...')
+
+        # Publish elevator_msg 3 times as it asks for the real robot
+        for _ in range(3):
+            self.elevator_down_pub.publish(elevator_msg)
+
+            rclpy.spin_once(self, timeout_sec=0.2)
+
+        # Wait before Nav2 takes back of the robot control
+        time.sleep(2.0)
+
+        print('The robot put down the shelf successfully.')
 
     def move_out_of_loading_area(self, distance=0.50, timeout_seconds=20.0):
 

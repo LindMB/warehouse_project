@@ -2,6 +2,7 @@
 
 import rclpy
 import time
+import math
 
 from rclpy.duration import Duration
 from rclpy.parameter import Parameter
@@ -12,6 +13,23 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 from shelf_approach import ShelfApproach
 
+def create_circular_footprint(robot_radius, nb_points=16):
+
+    footprint = []
+
+    for i in range(nb_points):
+
+        angle = 2.0 * math.pi * i / nb_points
+
+        footprint.append(
+            Point32(
+                x=robot_radius * math.cos(angle),
+                y=robot_radius * math.sin(angle),
+                z=0.0
+            )
+        )
+    
+    return footprint
 
 def main():
     rclpy.init()
@@ -175,6 +193,35 @@ def main():
 
         if result == TaskResult.SUCCEEDED:
             print('The robot has reached shipping_position.')
+
+            ### Put the elevator down
+            shelf_approach.put_elevator_down()
+
+            ### Update footprint shape from robot + shelf to robot only
+            global_footprint_pub = navigator.create_publisher(
+                Polygon,
+                '/global_costmap/footprint',
+                10
+            )
+
+            local_footprint_pub = navigator.create_publisher(
+                Polygon,
+                '/local_costmap/footprint',
+                10
+            )
+
+            robot_footprint = Polygon()
+
+            # Circular shape definition
+            robot_footprint.points = create_circular_footprint(0.30)
+
+            print('Restoring the normal robot footprint...')
+
+            for i in range(5):
+                global_footprint_pub.publish(robot_footprint)
+                local_footprint_pub.publish(robot_footprint)
+                time.sleep(0.1)
+
 
         elif result == TaskResult.CANCELED:
             print('Navigation to shipping_position was canceled.')
