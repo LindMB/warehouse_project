@@ -709,10 +709,10 @@ class ShelfApproach(Node):
 
                 self.move_backward()
 
-                print('Backward distance travelled: '
-                    + '{0:.3f}'.format(self.accumulated_distance)
-                    + ' / ' + '{0:.3f}'.format(distance) + ' m'
-                )
+                #print('Backward distance travelled: '
+                #    + '{0:.3f}'.format(self.accumulated_distance)
+                #    + ' / ' + '{0:.3f}'.format(distance) + ' m'
+                #)
 
                 if (time.monotonic() - start_time > timeout_seconds):
                     print('The backward maneuver timed out.')

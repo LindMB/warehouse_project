@@ -139,6 +139,51 @@ def main():
             print('The robot could not leave the loading area.')
             exit(1)
 
+        ### Navigate to the shipping position
+        # Robot Shipping Position (between both tables)
+        shipping_position = PoseStamped()
+        shipping_position.header.frame_id = 'map'
+        shipping_position.header.stamp = navigator.get_clock().now().to_msg()
+
+        # Robot Shipping Position received from /goal_pose topic 
+        # when 2D Goal Pose is set in RViz
+        shipping_position.pose.position.x = 2.4999141693115234
+        shipping_position.pose.position.y = 1.1776050329208374
+        shipping_position.pose.orientation.z = 0.7106436531649286
+        shipping_position.pose.orientation.w = 0.7035521289971374
+
+        print('Navigating to shipping_position...')
+
+        navigator.goToPose(shipping_position)
+
+        i = 0
+
+        while not navigator.isTaskComplete():
+            i = i + 1
+            feedback = navigator.getFeedback()
+
+            if feedback and i % 5 == 0:
+                estimated_time = Duration.from_msg(
+                    feedback.estimated_time_remaining
+                ).nanoseconds / 1e9
+
+                print('Estimated time to shipping_position: '
+                    + '{0:.0f}'.format(estimated_time) + ' seconds.'
+                )
+
+        result = navigator.getResult()
+
+        if result == TaskResult.SUCCEEDED:
+            print('The robot has reached shipping_position.')
+
+        elif result == TaskResult.CANCELED:
+            print('Navigation to shipping_position was canceled.')
+            exit(1)
+
+        elif result == TaskResult.FAILED:
+            print('Navigation to shipping_position failed.')
+            exit(1)  
+
     elif result == TaskResult.CANCELED:
         print('Navigation to loading_position was canceled.')
         exit(1)
