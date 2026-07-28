@@ -82,10 +82,8 @@ def main():
                 feedback.estimated_time_remaining
             ).nanoseconds / 1e9
 
-            print(
-                'Estimated time to loading_position: '
-                + '{0:.0f}'.format(estimated_time)
-                + ' seconds.'
+            print('Estimated time to loading_position: '
+                + '{0:.0f}'.format(estimated_time) + ' seconds.'
             )
 
     result = navigator.getResult()
@@ -135,6 +133,11 @@ def main():
             global_footprint_pub.publish(loaded_footprint)
             local_footprint_pub.publish(loaded_footprint)
             time.sleep(0.1)
+
+        ### Move out of loading position by moving the robot backward
+        if not shelf_approach.move_out_of_loading_area(distance=1.0):
+            print('The robot could not leave the loading area.')
+            exit(1)
 
     elif result == TaskResult.CANCELED:
         print('Navigation to loading_position was canceled.')

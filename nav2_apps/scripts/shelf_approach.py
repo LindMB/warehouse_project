@@ -36,7 +36,7 @@ class ShelfApproach(Node):
         self.odom_frame = 'odom'
 
         self.kp_yaw = 1.5
-        self.linear_speed = 0.15
+        self.linear_speed = 0.1
 
         self.distance_to_move_under_shelf = 0.40
 
@@ -61,6 +61,26 @@ class ShelfApproach(Node):
         self.previous_x = 0.0
         self.previous_y = 0.0
         self.accumulated_distance = 0.0
+
+        self.kp_forward_yaw = 1.5
+
+        # Limit for the robot rotation underneath the shelf
+        self.maximum_forward_angular_speed = 0.50
+
+        # Last orientation received from odom
+        self.current_odom_yaw = None
+        
+        # Orientation of the entry axe of the shelf
+        # in laser frame and in odom frame
+        self.cart_yaw_in_laser_frame = 0.0
+        self.cart_yaw_in_odom = 0.0
+
+        self.final_yaw_error_threshold = math.radians(2.0)
+        self.kp_final_yaw = 1.5
+        self.maximum_final_angular_speed = 0.25
+
+        self.need_to_measure_travelled_distance = False
+
 
         qos = QoSProfile(
             depth=10,
@@ -174,8 +194,39 @@ class ShelfApproach(Node):
         self.cart_x = (leg_1_x + leg_2_x) / 2.0
         self.cart_y = (leg_1_y + leg_2_y) / 2.0
 
+        # Orientation of the line linking both legs
+        shelf_edge_yaw = math.atan2(
+            leg_2_y - leg_1_y,
+            leg_2_x - leg_1_x
+        )
+
+        candidate_yaw_1 = self.normalize_angle(
+            shelf_edge_yaw + math.pi / 2.0
+        )
+
+        candidate_yaw_2 = self.normalize_angle(
+            shelf_edge_yaw - math.pi / 2.0
+        )
+
+        # Direction from laser frame towards the shelf center
+        direction_to_center = math.atan2(self.cart_y, self.cart_x)
+
+        error_1 = abs(self.normalize_angle(candidate_yaw_1 - direction_to_center))
+        error_2 = abs(self.normalize_angle(candidate_yaw_2 - direction_to_center))
+
+        # Keep the normal pointing towards the shelf
+        if error_1 < error_2:
+            self.cart_yaw_in_laser_frame = candidate_yaw_1
+        else:
+            self.cart_yaw_in_laser_frame = candidate_yaw_2
+
         print('Shelf center detected at x=' + '{0:.3f}'.format(self.cart_x)
             + ', y=' + '{0:.3f}'.format(self.cart_y) + ' in the laser frame.'
+        )
+
+        print('Shelf approach yaw in laser frame: ' 
+            + '{0:.2f}'.format(math.degrees(self.cart_yaw_in_laser_frame))
+            + ' degrees.'
         )
 
     def prepare_cart_frame_transform(self):
@@ -191,7 +242,7 @@ class ShelfApproach(Node):
         cart_point_laser.point.z = 0.0
 
         # Since the TF Buffer is still being filled,
-        # we have to wait when laser -> odom is available befor creating cart_frame
+        # we have to wait when laser -> odom is available before creating cart_frame
         start_time = time.monotonic()
 
         while rclpy.ok():
@@ -228,6 +279,15 @@ class ShelfApproach(Node):
             laser_to_odom
         )
 
+        laser_yaw_in_odom = self.quaternion_to_yaw(
+            laser_to_odom.transform.rotation
+        )
+
+        self.cart_yaw_in_odom = self.normalize_angle(
+            laser_yaw_in_odom
+            + self.cart_yaw_in_laser_frame
+        )
+
         self.cart_frame_transform = TransformStamped()
         self.cart_frame_transform.header.frame_id = self.odom_frame
         self.cart_frame_transform.child_frame_id = self.target_frame
@@ -242,8 +302,14 @@ class ShelfApproach(Node):
 
         self.cart_frame_transform.transform.rotation.x = 0.0
         self.cart_frame_transform.transform.rotation.y = 0.0
-        self.cart_frame_transform.transform.rotation.z = 0.0
-        self.cart_frame_transform.transform.rotation.w = 1.0
+
+        self.cart_frame_transform.transform.rotation.z = math.sin(
+            self.cart_yaw_in_odom / 2.0
+        )
+
+        self.cart_frame_transform.transform.rotation.w = math.cos(
+            self.cart_yaw_in_odom / 2.0
+        )
 
         self.cart_frame_ready = True
 
@@ -288,42 +354,107 @@ class ShelfApproach(Node):
         y = transform.transform.translation.y
 
         error_distance = math.sqrt(x * x + y * y)
-        error_yaw = math.atan2(y, x)
+        error_heading = math.atan2(y, x)
 
-        return error_distance, error_yaw
+        # cart_frame rotation given in robot_base_footprint frame
+        # represents directly the gap of orientation remaining
+        error_yaw = self.quaternion_to_yaw(transform.transform.rotation)
+        error_yaw = self.normalize_angle(error_yaw)
 
-    def move_robot_to_cart_frame(self, error_distance, error_yaw) :
+        return (error_distance, error_heading, error_yaw)
+
+    def move_robot_to_cart_frame(self, error_distance, error_heading, error_yaw):
 
         move_msg = Twist()
 
         if (error_distance > self.distance_error_threshold) :
+
             move_msg.linear.x = self.linear_speed
 
-            angular_command = self.kp_yaw * error_yaw
+            angular_command = (self.kp_yaw * error_heading)
 
-            # Python equivalent of std::clamp(value, -1.0, 1.0)
-            move_msg.angular.z = max(-1.0, min(angular_command, 1.0) )
+            move_msg.angular.z = max(
+                -1.0,
+                min(angular_command, 1.0)
+            )
 
-            print('Distance to cart_frame: ' + '{0:.3f}'.format(error_distance) + ' m')
+            print( 'Distance to cart_frame: '
+                + '{0:.3f}'.format(error_distance) + ' m | heading error: '
+                + '{0:.2f}'.format(math.degrees(error_heading)) + ' degrees'
+            )
+
+        # If the robot is at the right position but its orientation 
+        # is not corresponding yet to the entry axis of the shelf
+        elif (abs(error_yaw) > self.final_yaw_error_threshold) :
+
+            move_msg.linear.x = 0.0
+
+            angular_command = (self.kp_final_yaw * error_yaw)
+
+            move_msg.angular.z = max(
+                -self.maximum_final_angular_speed,
+                min(angular_command, self.maximum_final_angular_speed)
+            )
+
+            print('Aligning with cart_frame: '
+                + '{0:.2f}'.format(math.degrees(error_yaw)) + ' degrees remaining'
+            )
 
         else:
             move_msg.linear.x = 0.0
             move_msg.angular.z = 0.0
 
             self.cart_frame_reached = True
+
             self.first_odom = True
             self.accumulated_distance = 0.0
 
-            print('The robot has reached cart_frame.')
+            self.need_to_measure_travelled_distance = True
+
+            print('The robot has reached cart_frame and is aligned with the shelf.')
 
         self.cmd_vel_pub.publish(move_msg)
 
+    @staticmethod
+    def quaternion_to_yaw(quaternion):
+
+        sin_yaw = 2.0 * (
+            quaternion.w * quaternion.z
+            + quaternion.x * quaternion.y
+        )
+
+        cos_yaw = 1.0 - 2.0 * (
+            quaternion.y * quaternion.y
+            + quaternion.z * quaternion.z
+        )
+
+        return math.atan2(sin_yaw, cos_yaw)
+
+    @staticmethod
+    def normalize_angle(angle):
+
+        if (angle > math.pi) :
+            angle -= 2.0 * math.pi
+
+        elif (angle < -math.pi) :
+            angle += 2.0 * math.pi
+
+        return angle
+
     def odom_callback(self, message):
 
+        self.current_odom_yaw = self.quaternion_to_yaw(
+            message.pose.pose.orientation
+        )
+
+        """
         if not self.cart_frame_reached:
             return
 
         if self.distance_under_shelf_travelled:
+            return
+        """
+        if not self.need_to_measure_travelled_distance:
             return
 
         current_x = message.pose.pose.position.x
@@ -348,9 +479,60 @@ class ShelfApproach(Node):
 
         move_forward_msg = Twist()
         move_forward_msg.linear.x = self.linear_speed
-        move_forward_msg.angular.z = 0.0
+
+        if self.current_odom_yaw is None:
+            move_forward_msg.angular.z = 0.0
+
+        else:
+            yaw_error = self.normalize_angle(
+                self.cart_yaw_in_odom - self.current_odom_yaw
+            )
+
+            angular_command = (self.kp_forward_yaw * yaw_error)
+
+            move_forward_msg.angular.z = max(
+                - self.maximum_forward_angular_speed,
+                min(
+                    angular_command,
+                    self.maximum_forward_angular_speed
+                )
+            )
+
+            print('Forward yaw error: ' + '{0:.2f}'.format(math.degrees(yaw_error))
+                + ' degrees'
+            )
 
         self.cmd_vel_pub.publish(move_forward_msg)
+
+    def move_backward(self):
+
+        move_backward_msg = Twist()
+        move_backward_msg.linear.x = - self.linear_speed
+
+        if self.current_odom_yaw is None:
+            move_backward_msg.angular.z = 0.0
+
+        else:
+
+            yaw_error = self.normalize_angle(
+                self.cart_yaw_in_odom - self.current_odom_yaw
+            )
+
+            angular_command = (self.kp_forward_yaw * yaw_error)
+
+            move_backward_msg.angular.z = max(
+                -self.maximum_forward_angular_speed,
+                min(
+                    angular_command,
+                    self.maximum_forward_angular_speed
+                )
+            )
+
+            print('Backward yaw error: '
+                + '{0:.2f}'.format(math.degrees(yaw_error)) + ' degrees'
+            )
+
+        self.cmd_vel_pub.publish(move_backward_msg)
 
     def stop_robot(self):
 
@@ -443,9 +625,13 @@ class ShelfApproach(Node):
                     errors = (self.compute_robot_to_cart_error())
 
                     if errors is not None:
-                        error_distance, error_yaw = errors
+                        (error_distance, error_heading, error_yaw) = errors
 
-                        self.move_robot_to_cart_frame(error_distance, error_yaw)
+                        self.move_robot_to_cart_frame(
+                            error_distance,
+                            error_heading,
+                            error_yaw
+                        )
 
                 else:
                     if (self.accumulated_distance < self.distance_to_move_under_shelf) :
@@ -460,6 +646,7 @@ class ShelfApproach(Node):
                         self.stop_robot()
 
                         self.distance_under_shelf_travelled = True
+                        self.need_to_measure_travelled_distance = False
 
                         print('The robot is correctly positioned under the shelf.')
 
@@ -469,6 +656,8 @@ class ShelfApproach(Node):
 
                     self.stop_robot()
                     return False
+            
+
 
         except KeyboardInterrupt:
             self.stop_robot()
@@ -494,3 +683,52 @@ class ShelfApproach(Node):
         time.sleep(2.0)
 
         print('The robot lifted the shelf successfully.')
+
+    def move_out_of_loading_area(self, distance=0.50, timeout_seconds=20.0):
+
+        if self.current_odom_yaw is None:
+
+            print('No odometry orientation is available for the backward maneuver.')
+            self.stop_robot()
+            return False
+
+        # New distance measurement starts for the backward maneuver
+        self.first_odom = True
+        self.accumulated_distance = 0.0
+
+        self.need_to_measure_travelled_distance = True
+
+        print('Moving backward from the loading area...')
+
+        start_time = time.monotonic()
+
+        try:
+            while (rclpy.ok() and self.accumulated_distance < distance):
+
+                rclpy.spin_once(self, timeout_sec=0.1)
+
+                self.move_backward()
+
+                print('Backward distance travelled: '
+                    + '{0:.3f}'.format(self.accumulated_distance)
+                    + ' / ' + '{0:.3f}'.format(distance) + ' m'
+                )
+
+                if (time.monotonic() - start_time > timeout_seconds):
+                    print('The backward maneuver timed out.')
+
+                    self.stop_robot()
+                    self.need_to_measure_travelled_distance = False
+                    return False
+
+        except KeyboardInterrupt:
+            self.stop_robot()
+            self.need_to_measure_travelled_distance = False
+            raise
+
+        self.stop_robot()
+        self.need_to_measure_travelled_distance = False
+
+        print('The robot has cleared the loading area.')
+
+        return True
