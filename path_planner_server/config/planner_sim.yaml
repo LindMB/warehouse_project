@@ -33,6 +33,7 @@ global_costmap:
       robot_radius: 0.30
 
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      filters: ["keepout_filter"]
 
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -67,8 +68,6 @@ global_costmap:
         # les dimensions réelles du RB1 et la largeur des passages.
         inflation_radius: 0.20
         cost_scaling_factor: 2.0
-
-      filters: ["keepout_filter"]
 
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"

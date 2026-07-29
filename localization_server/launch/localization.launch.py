@@ -17,16 +17,21 @@ def generate_launch_description() :
     )
 
     use_sim_time = PythonExpression([
-        "False if '",
+        "False if 'real' in '",
         map_file,
-        "' == 'warehouse_map_real.yaml' "
-        "else True"
+        "' else True"
     ])
 
-    map_path = PathJoinSubstitution([
+    navigation_map_file = PythonExpression([
+        "'warehouse_map_real.yaml' if 'real' in '",
+        map_file,
+        "'else 'warehouse_map_sim.yaml'"
+    ])
+
+    navigation_map_path = PathJoinSubstitution([
         FindPackageShare("map_server"),
         "config",
-        map_file
+        navigation_map_file
     ])
 
     map_server_node = Node(
@@ -37,23 +42,21 @@ def generate_launch_description() :
         parameters=[
             {
                 "use_sim_time": use_sim_time,
-                "yaml_filename": map_path,
+                "yaml_filename": navigation_map_path,
             },
         ],
     )
 
-    amcl_config_yaml_filename = PythonExpression([
-        "'amcl_config_real.yaml' "
-        "if '",
+    amcl_config_yaml_file = PythonExpression([
+        "'amcl_config_real.yaml' if 'real' in '",
         map_file,
-        "' == 'warehouse_map_real.yaml' "
-        "else 'amcl_config_sim.yaml'"
+        "'else 'amcl_config_sim.yaml'"
     ])
 
     amcl_config_yaml_filepath = PathJoinSubstitution([
         FindPackageShare("localization_server"),
         "config",
-        amcl_config_yaml_filename
+        amcl_config_yaml_file
     ])
 
     amcl_node = Node(

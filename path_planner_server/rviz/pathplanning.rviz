@@ -139,6 +139,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        cart_frame:
+          Value: true
         map:
           Value: true
         odom:
@@ -171,6 +173,8 @@ Visualization Manager:
       Tree:
         map:
           odom:
+            cart_frame:
+              {}
             robot_base_footprint:
               robot_base_link:
                 robot_evelator_base_link:
@@ -420,6 +424,27 @@ Visualization Manager:
         Value: /map_updates
       Use Timestamp: false
       Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /keepout_filter_mask
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /keepout_filter_mask_updates
+      Use Timestamp: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -466,16 +491,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 10.879761695861816
+      Distance: 9.68779468536377
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.7321789264678955
-        Y: -0.9442985653877258
-        Z: -0.06556213647127151
+        X: 2.664548397064209
+        Y: -0.839931309223175
+        Z: -0.06542009115219116
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -484,7 +509,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.1585822105407715
+      Yaw: 0.005396366119384766
     Saved: ~
 Window Geometry:
   Displays:
