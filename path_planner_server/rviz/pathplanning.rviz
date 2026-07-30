@@ -429,7 +429,7 @@ Visualization Manager:
       Color Scheme: map
       Draw Behind: false
       Enabled: true
-      Name: Map
+      Name: Keepout Fliter Mask
       Topic:
         Depth: 5
         Durability Policy: Transient Local
