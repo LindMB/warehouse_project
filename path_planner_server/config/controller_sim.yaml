@@ -138,8 +138,8 @@ local_costmap:
           
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 0.30
-        cost_scaling_factor: 3.0
+        inflation_radius: 0.40
+        cost_scaling_factor: 1.0
 
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
