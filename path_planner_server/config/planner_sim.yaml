@@ -66,8 +66,8 @@ global_costmap:
         # L'inflation crée une marge de sécurité autour des obstacles.
         # Ces valeurs constituent un point de départ à régler avec
         # les dimensions réelles du RB1 et la largeur des passages.
-        inflation_radius: 0.20
-        cost_scaling_factor: 2.0
+        inflation_radius: 0.30
+        cost_scaling_factor: 3.0
 
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
