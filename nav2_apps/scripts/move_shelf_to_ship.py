@@ -80,10 +80,10 @@ def main():
 
     # Robot Loading Position received from /goal_pose topic 
     # when 2D Goal Pose is set in RViz
-    loading_position.pose.position.x = 5.806089878082275
+    loading_position.pose.position.x = 5.836089878082275
     loading_position.pose.position.y = -0.3760889172554016
-    loading_position.pose.orientation.z = -0.750448112923485
-    loading_position.pose.orientation.w = 0.6609293682456395
+    loading_position.pose.orientation.z = 0.09444084932338563
+    loading_position.pose.orientation.w = 0.9955304746611615
 
     print('Navigating to loading_position...')
 
@@ -108,6 +108,10 @@ def main():
 
     if result == TaskResult.SUCCEEDED:
         print('The robot has reached loading_position.')
+
+        if not shelf_approach.rotate_by_angle(math.radians(-92.0)):
+            print('The robot could not align itself with the shelf.')
+            exit(1)
 
         if not shelf_approach.move_under_shelf():
             print('The final shelf approach failed.')
@@ -153,7 +157,7 @@ def main():
             time.sleep(0.1)
 
         ### Move out of loading position by moving the robot backward
-        if not shelf_approach.move_out_of_loading_area(distance=1.0):
+        if not shelf_approach.move_out_of_loading_area(distance=1.2):
             print('The robot could not leave the loading area.')
             exit(1)
 
@@ -165,10 +169,10 @@ def main():
 
         # Robot Shipping Position received from /goal_pose topic 
         # when 2D Goal Pose is set in RViz
-        shipping_position.pose.position.x = 2.4999141693115234
-        shipping_position.pose.position.y = 1.1776050329208374
-        shipping_position.pose.orientation.z = 0.7106436531649286
-        shipping_position.pose.orientation.w = 0.7035521289971374
+        shipping_position.pose.position.x = 2.721620101928711
+        shipping_position.pose.position.y = 1.357941198348999
+        shipping_position.pose.orientation.z = 0.735059298028239
+        shipping_position.pose.orientation.w = 0.6780028232848537
 
         print('Navigating to shipping_position...')
 
@@ -221,6 +225,36 @@ def main():
                 global_footprint_pub.publish(robot_footprint)
                 local_footprint_pub.publish(robot_footprint)
                 time.sleep(0.1)
+
+            ### Move out of loading position by moving the robot backward
+            if not shelf_approach.move_out_of_shipping_area(distance=1.2):
+                print('The robot could not leave the shipping area.')
+                exit(1)
+
+            # Refresh the timestamp before reusing the initial pose.
+            init_position.header.stamp = (
+                navigator.get_clock().now().to_msg()
+            )
+
+            print('Returning to init_position...')
+
+            navigator.goToPose(init_position)
+
+            while not navigator.isTaskComplete():
+                pass
+
+            result = navigator.getResult()
+
+            if result == TaskResult.SUCCEEDED:
+                print('The robot has returned to init_position.')
+
+            elif result == TaskResult.CANCELED:
+                print('Navigation to init_position was canceled.')
+                exit(1)
+
+            elif result == TaskResult.FAILED:
+                print('Navigation to init_position failed.')
+                exit(1)
 
 
         elif result == TaskResult.CANCELED:
