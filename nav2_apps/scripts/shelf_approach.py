@@ -35,7 +35,7 @@ class ShelfApproach(Node):
         self.target_frame = 'cart_frame'
         self.odom_frame = 'odom'
 
-        self.kp_yaw = 1.5
+        self.kp_yaw = 1.2
         self.linear_speed = 0.1
 
         self.distance_to_move_under_shelf = 0.40
@@ -65,7 +65,7 @@ class ShelfApproach(Node):
         self.kp_forward_yaw = 1.5
 
         # Limit for the robot rotation underneath the shelf
-        self.maximum_forward_angular_speed = 0.50
+        self.maximum_forward_angular_speed = 0.20
 
         # Last orientation received from odom
         self.current_odom_yaw = None
@@ -80,7 +80,7 @@ class ShelfApproach(Node):
         self.maximum_final_angular_speed = 0.25
 
         self.need_to_measure_travelled_distance = False
-
+        self.first_save_backward_target_yaw = False
 
         qos = QoSProfile(
             depth=10,
@@ -391,20 +391,20 @@ class ShelfApproach(Node):
 
         # If the robot is at the right position but its orientation 
         # is not corresponding yet to the entry axis of the shelf
-        elif (abs(error_yaw) > self.final_yaw_error_threshold) :
+        #elif (abs(error_yaw) > self.final_yaw_error_threshold) :
 
-            move_msg.linear.x = 0.0
+        #    move_msg.linear.x = 0.0
 
-            angular_command = (self.kp_final_yaw * error_yaw)
+        #    angular_command = (self.kp_final_yaw * error_yaw)
 
-            move_msg.angular.z = max(
-                -self.maximum_final_angular_speed,
-                min(angular_command, self.maximum_final_angular_speed)
-            )
+        #    move_msg.angular.z = max(
+        #        -self.maximum_final_angular_speed,
+        #        min(angular_command, self.maximum_final_angular_speed)
+        #    )
 
-            print('Aligning with cart_frame: '
-                + '{0:.2f}'.format(math.degrees(error_yaw)) + ' degrees remaining'
-            )
+        #    print('Aligning with cart_frame: '
+        #        + '{0:.2f}'.format(math.degrees(error_yaw)) + ' degrees remaining'
+        #    )
 
         else:
             move_msg.linear.x = 0.0
@@ -534,8 +534,23 @@ class ShelfApproach(Node):
                 )
             )
 
-            print('Backward yaw error: '
-                + '{0:.2f}'.format(math.degrees(yaw_error)) + ' degrees'
+            print(
+                'Target yaw: '
+                + '{0:.2f}'.format(
+                    math.degrees(self.cart_yaw_in_odom)
+                )
+                + '° | Current yaw: '
+                + '{0:.2f}'.format(
+                    math.degrees(self.current_odom_yaw)
+                )
+                + '° | Yaw error: '
+                + '{0:.2f}'.format(
+                    math.degrees(yaw_error)
+                )
+                + '° | Angular command: '
+                + '{0:.3f}'.format(
+                    angular_command
+                )
             )
 
         self.cmd_vel_pub.publish(move_backward_msg)
@@ -638,15 +653,60 @@ class ShelfApproach(Node):
                             error_heading,
                             error_yaw
                         )
+                    
+                    backward_target_yaw = self.current_odom_yaw
 
                 else:
                     if (self.accumulated_distance < self.distance_to_move_under_shelf) :
                         
-                        self.move_forward()
+                        #self.move_forward()
 
                         print('Distance travelled under the shelf: '
                             + '{0:.3f}'.format(self.accumulated_distance) + ' m'
                         )
+
+                        move_backward_msg = Twist()
+                        move_backward_msg.linear.x = self.linear_speed
+
+                        if self.current_odom_yaw is None:
+                            move_backward_msg.angular.z = 0.0
+
+                        else:
+
+                            yaw_error = self.normalize_angle(
+                                backward_target_yaw - self.current_odom_yaw
+                            )
+
+                            angular_command = (self.kp_forward_yaw * yaw_error)
+
+                            move_backward_msg.angular.z = max(
+                                -self.maximum_forward_angular_speed,
+                                min(
+                                    angular_command,
+                                    self.maximum_forward_angular_speed
+                                )
+                            )
+
+                            print(
+                                'Target yaw: '
+                                + '{0:.2f}'.format(
+                                    math.degrees(backward_target_yaw)
+                                )
+                                + '° | Current yaw: '
+                                + '{0:.2f}'.format(
+                                    math.degrees(self.current_odom_yaw)
+                                )
+                                + '° | Yaw error: '
+                                + '{0:.2f}'.format(
+                                    math.degrees(yaw_error)
+                                )
+                                + '° | Angular command: '
+                                + '{0:.3f}'.format(
+                                    angular_command
+                                )
+                            )
+
+                        self.cmd_vel_pub.publish(move_backward_msg)
 
                     else:
                         self.stop_robot()
@@ -756,3 +816,222 @@ class ShelfApproach(Node):
         print('The robot has cleared the loading area.')
 
         return True
+
+    def move_out_of_shipping_area(self, distance=0.50, timeout_seconds=20.0):
+
+        if self.current_odom_yaw is None:
+
+            print('No odometry orientation is available for the backward maneuver.')
+            self.stop_robot()
+            return False
+
+        backward_target_yaw = self.current_odom_yaw
+        self.first_save_backward_target_yaw = False
+
+        print(
+            'Backward target yaw saved: '
+            + '{0:.2f}'.format(math.degrees(backward_target_yaw)) + ' degrees.'
+        )
+
+        # New distance measurement starts for the backward maneuver
+        self.first_odom = True
+        self.accumulated_distance = 0.0
+
+        self.need_to_measure_travelled_distance = True
+
+        print('Moving backward from the shipping area...')
+
+        start_time = time.monotonic()
+
+        try:
+            while (rclpy.ok() and self.accumulated_distance < distance):
+
+                rclpy.spin_once(self, timeout_sec=0.1)
+
+                move_backward_msg = Twist()
+                move_backward_msg.linear.x = - self.linear_speed
+
+                if self.current_odom_yaw is None:
+                    move_backward_msg.angular.z = 0.0
+
+                else:
+
+                    yaw_error = self.normalize_angle(
+                        backward_target_yaw - self.current_odom_yaw
+                    )
+
+                    angular_command = (self.kp_forward_yaw * yaw_error)
+
+                    move_backward_msg.angular.z = max(
+                        -self.maximum_forward_angular_speed,
+                        min(
+                            angular_command,
+                            self.maximum_forward_angular_speed
+                        )
+                    )
+
+                    print(
+                        'Target yaw: '
+                        + '{0:.2f}'.format(
+                            math.degrees(backward_target_yaw)
+                        )
+                        + '° | Current yaw: '
+                        + '{0:.2f}'.format(
+                            math.degrees(self.current_odom_yaw)
+                        )
+                        + '° | Yaw error: '
+                        + '{0:.2f}'.format(
+                            math.degrees(yaw_error)
+                        )
+                        + '° | Angular command: '
+                        + '{0:.3f}'.format(
+                            angular_command
+                        )
+                    )
+
+                self.cmd_vel_pub.publish(move_backward_msg)
+
+                if ( (self.current_odom_yaw > 0)
+                    and not self.first_save_backward_target_yaw) :
+
+                    self.first_save_backward_target_yaw = True
+                    backward_target_yaw = self.current_odom_yaw
+
+                
+                if (time.monotonic() - start_time > timeout_seconds):
+                    print('The backward maneuver timed out.')
+
+                    self.stop_robot()
+                    self.need_to_measure_travelled_distance = False
+                    self.first_save_backward_target_yaw = False
+                    return False
+
+        except KeyboardInterrupt:
+            self.stop_robot()
+            self.need_to_measure_travelled_distance = False
+            self.first_save_backward_target_yaw = False
+            raise
+
+        self.stop_robot()
+        self.need_to_measure_travelled_distance = False
+        self.first_save_backward_target_yaw = False
+
+        print('The robot has cleared the loading area.')
+
+        return True
+
+
+    def rotate_by_angle(self, rotation_angle, timeout_seconds=15.0):
+
+        # Positive angle = Turn left
+        # Negative angle = Turn right
+
+        if self.current_odom_yaw is None:
+            print('Waiting for odometry before rotating...')
+
+            wait_start_time = time.monotonic()
+
+            while rclpy.ok() and self.current_odom_yaw is None:
+                rclpy.spin_once(
+                    self,
+                    timeout_sec=0.1
+                )
+
+                if time.monotonic() - wait_start_time > 5.0:
+                    print('No odometry orientation was received.')
+                    self.stop_robot()
+                    return False
+
+        initial_yaw = self.current_odom_yaw
+
+        target_yaw = self.normalize_angle(
+            initial_yaw + rotation_angle
+        )
+
+        yaw_tolerance = math.radians(1.5)
+        kp_rotation = 1.5
+        maximum_angular_speed = 0.35
+        minimum_angular_speed = 0.08
+
+        print(
+            'Rotating from '
+            + '{0:.2f}'.format(math.degrees(initial_yaw))
+            + ' to '
+            + '{0:.2f}'.format(math.degrees(target_yaw))
+            + ' degrees.'
+        )
+
+        start_time = time.monotonic()
+
+        try:
+            while rclpy.ok():
+                rclpy.spin_once(
+                    self,
+                    timeout_sec=0.05
+                )
+
+                yaw_error = self.normalize_angle(
+                    target_yaw - self.current_odom_yaw
+                )
+
+                if abs(yaw_error) <= yaw_tolerance:
+                    self.stop_robot()
+
+                    print(
+                        'Rotation completed with a remaining error of '
+                        + '{0:.2f}'.format(
+                            math.degrees(yaw_error)
+                        )
+                        + ' degrees.'
+                    )
+
+                    return True
+
+                angular_command = kp_rotation * yaw_error
+
+                angular_command = max(
+                    -maximum_angular_speed,
+                    min(
+                        angular_command,
+                        maximum_angular_speed
+                    )
+                )
+
+                # Évite que la commande devienne trop faible pour
+                # vaincre les frottements lorsque l'erreur est petite.
+                if (
+                    0.0 < abs(angular_command)
+                    < minimum_angular_speed
+                ):
+                    angular_command = math.copysign(
+                        minimum_angular_speed,
+                        angular_command
+                    )
+
+                velocity_message = Twist()
+                velocity_message.linear.x = 0.0
+                velocity_message.angular.z = angular_command
+
+                self.cmd_vel_pub.publish(
+                    velocity_message
+                )
+
+                print(
+                    'Rotation error: '
+                    + '{0:.2f}'.format(
+                        math.degrees(yaw_error)
+                    )
+                    + ' degrees'
+                )
+
+                if (
+                    time.monotonic() - start_time
+                    > timeout_seconds
+                ):
+                    print('The rotation maneuver timed out.')
+                    self.stop_robot()
+                    return False
+
+        except KeyboardInterrupt:
+            self.stop_robot()
+            raise
