@@ -659,8 +659,6 @@ class ShelfApproach(Node):
                 else:
                     if (self.accumulated_distance < self.distance_to_move_under_shelf) :
                         
-                        #self.move_forward()
-
                         print('Distance travelled under the shelf: '
                             + '{0:.3f}'.format(self.accumulated_distance) + ' m'
                         )
@@ -932,12 +930,10 @@ class ShelfApproach(Node):
             wait_start_time = time.monotonic()
 
             while rclpy.ok() and self.current_odom_yaw is None:
-                rclpy.spin_once(
-                    self,
-                    timeout_sec=0.1
-                )
+                
+                rclpy.spin_once(self, timeout_sec=0.1)
 
-                if time.monotonic() - wait_start_time > 5.0:
+                if time.monotonic() - wait_start_time > 5.0 :
                     print('No odometry orientation was received.')
                     self.stop_robot()
                     return False
@@ -956,19 +952,15 @@ class ShelfApproach(Node):
         print(
             'Rotating from '
             + '{0:.2f}'.format(math.degrees(initial_yaw))
-            + ' to '
-            + '{0:.2f}'.format(math.degrees(target_yaw))
-            + ' degrees.'
+            + ' to '+ '{0:.2f}'.format(math.degrees(target_yaw)) + ' degrees.'
         )
 
         start_time = time.monotonic()
 
         try:
             while rclpy.ok():
-                rclpy.spin_once(
-                    self,
-                    timeout_sec=0.05
-                )
+
+                rclpy.spin_once(self, timeout_sec=0.05)
 
                 yaw_error = self.normalize_angle(
                     target_yaw - self.current_odom_yaw
@@ -979,9 +971,7 @@ class ShelfApproach(Node):
 
                     print(
                         'Rotation completed with a remaining error of '
-                        + '{0:.2f}'.format(
-                            math.degrees(yaw_error)
-                        )
+                        + '{0:.2f}'.format(math.degrees(yaw_error))
                         + ' degrees.'
                     )
 
@@ -997,37 +987,26 @@ class ShelfApproach(Node):
                     )
                 )
 
-                # Évite que la commande devienne trop faible pour
+                # Éviter que la commande devienne trop faible pour
                 # vaincre les frottements lorsque l'erreur est petite.
-                if (
-                    0.0 < abs(angular_command)
-                    < minimum_angular_speed
-                ):
+                if (0.0 < abs(angular_command) < minimum_angular_speed):
                     angular_command = math.copysign(
                         minimum_angular_speed,
                         angular_command
                     )
 
-                velocity_message = Twist()
-                velocity_message.linear.x = 0.0
-                velocity_message.angular.z = angular_command
+                rotate_msg = Twist()
+                rotate_msg.linear.x = 0.0
+                rotate_msg.angular.z = angular_command
 
-                self.cmd_vel_pub.publish(
-                    velocity_message
-                )
+                self.cmd_vel_pub.publish(rotate_msg)
 
                 print(
                     'Rotation error: '
-                    + '{0:.2f}'.format(
-                        math.degrees(yaw_error)
-                    )
-                    + ' degrees'
+                    + '{0:.2f}'.format(math.degrees(yaw_error))+ ' degrees'
                 )
 
-                if (
-                    time.monotonic() - start_time
-                    > timeout_seconds
-                ):
+                if (time.monotonic() - start_time > timeout_seconds):
                     print('The rotation maneuver timed out.')
                     self.stop_robot()
                     return False
