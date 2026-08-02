@@ -18,10 +18,16 @@ def generate_launch_description():
 
     package_share = FindPackageShare("path_planner_server")
 
+    filters_config_file = PythonExpression([
+        "'filters_sim.yaml' if ",
+        use_sim_time,
+        " else 'filters_real.yaml'",
+    ])
+
     filters_config = PathJoinSubstitution([
         package_share,
         "config",
-        "filters.yaml",
+        filters_config_file,
     ])
 
     planner_config_file = PythonExpression([

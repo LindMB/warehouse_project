@@ -46,7 +46,7 @@ def main():
         )
     ])
 
-    shelf_approach = ShelfApproach(use_simulation=True)
+    shelf_approach = ShelfApproach(use_simulation=False)
 
     # Initial position of the robot in the warehouse map
     init_position = PoseStamped()
@@ -55,10 +55,10 @@ def main():
 
     # Robot Initial Pose received on /initialpose topic 
     # when 2D Pose Estimate is set in RViz
-    init_position.pose.position.x = 0.014764785766601562
-    init_position.pose.position.y = 0.016197383403778076
-    init_position.pose.orientation.z = -0.03322007063838769
-    init_position.pose.orientation.w = 0.999448061135135
+    init_position.pose.position.x =  -0.3507683277130127
+    init_position.pose.position.y = -0.12274336814880371
+    init_position.pose.orientation.z = 0.0027034062069907624
+    init_position.pose.orientation.w = 0.9999963457907634
 
     print('Setting the initial robot pose...')
 
@@ -80,10 +80,10 @@ def main():
 
     # Robot Loading Position received from /goal_pose topic 
     # when 2D Goal Pose is set in RViz
-    loading_position.pose.position.x = 5.836089878082275
-    loading_position.pose.position.y = -0.3760889172554016
-    loading_position.pose.orientation.z = 0.09444084932338563
-    loading_position.pose.orientation.w = 0.9955304746611615
+    loading_position.pose.position.x = 4.329412937164307
+    loading_position.pose.position.y = -0.321516215801239
+    loading_position.pose.orientation.z = 0.0027034062069907624
+    loading_position.pose.orientation.w = 0.9999963457907634
 
     print('Navigating to loading_position...')
 
@@ -169,10 +169,10 @@ def main():
 
         # Robot Middle Position received from /goal_pose topic 
         # when 2D Goal Pose is set in RViz
-        middle_position.pose.position.x = 2.6824581623077393
-        middle_position.pose.position.y = 0.042989447712898254
-        middle_position.pose.orientation.z = 0.7013630206684542
-        middle_position.pose.orientation.w = 0.7128042601155112
+        middle_position.pose.position.x = 1.980424404144287
+        middle_position.pose.position.y = -0.28854334354400635
+        middle_position.pose.orientation.z = 0.708902819833417
+        middle_position.pose.orientation.w = 0.7053061690019661
 
         print('Navigating to middle_position...')
 
@@ -204,10 +204,10 @@ def main():
 
                 # Robot Shipping Position received from /goal_pose topic 
                 # when 2D Goal Pose is set in RViz
-                shipping_position.pose.position.x = 2.6824581623077393 #2.721620101928711
-                shipping_position.pose.position.y = 1.3578556776046753 #1.357941198348999
-                shipping_position.pose.orientation.z = 0.7007256910935754 #0.735059298028239
-                shipping_position.pose.orientation.w = 0.7134307996164948 #0.6780028232848537
+                shipping_position.pose.position.x = 2.004753828048706
+                shipping_position.pose.position.y = 1.128702998161316
+                shipping_position.pose.orientation.z = 0.7091976675988844
+                shipping_position.pose.orientation.w = 0.7050096937434991
 
                 print('Navigating to shipping_position...')
 
@@ -262,7 +262,7 @@ def main():
                         time.sleep(0.1)
 
                     ### Move out of loading position by moving the robot backward
-                    if not shelf_approach.move_out_of_shipping_area(distance=1.2):
+                    if not shelf_approach.move_out_of_shipping_area(distance=1.5):
                         print('The robot could not leave the shipping area.')
                         exit(1)
 

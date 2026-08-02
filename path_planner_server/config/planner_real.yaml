@@ -68,6 +68,11 @@ global_costmap:
         # Ces valeurs constituent un point de départ à régler avec
         # les dimensions réelles du RB1 et la largeur des passages.
         inflation_radius: 0.20
-        cost_scaling_factor: 2.0
+        cost_scaling_factor: 1.0
+
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: True
+        filter_info_topic: "/costmap_filter_info"
 
       always_send_full_costmap: true

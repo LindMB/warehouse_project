@@ -20,20 +20,26 @@ from tf2_ros import Buffer, TransformBroadcaster, TransformException, TransformL
 
 class ShelfApproach(Node):
 
-    def __init__(self):
+    def __init__(self, use_simulation=True):
         super().__init__('shelf_approach', 
             parameter_overrides=[
                 Parameter(
                     'use_sim_time',
                     Parameter.Type.BOOL,
-                    True
+                    use_simulation
                 )
             ]
         )
 
+        if use_simulation:
+            self.odom_frame = 'odom'
+            self.leg_intensity_threshold = 6000.0
+        else:
+            self.odom_frame = 'robot_odom'
+            self.leg_intensity_threshold = 3700.0
+
         self.robot_frame = 'robot_base_footprint'
         self.target_frame = 'cart_frame'
-        self.odom_frame = 'odom'
 
         self.kp_yaw = 1.2
         self.linear_speed = 0.1
@@ -41,7 +47,6 @@ class ShelfApproach(Node):
         self.distance_to_move_under_shelf = 0.40
 
         self.distance_error_threshold = 0.04
-        self.leg_intensity_threshold = 6000.0
         self.same_leg_group_threshold = 5
 
         self.last_scan = None
@@ -103,7 +108,7 @@ class ShelfApproach(Node):
 
         self.cmd_vel_pub = self.create_publisher(
             Twist,
-            '/diffbot_base_controller/cmd_vel_unstamped',
+            '/cmd_vel',
             10
         )
 
@@ -330,11 +335,11 @@ class ShelfApproach(Node):
 
         if not self.cart_frame_ready :
             return
-
+        #print("Publishing cart_frame...")
         self.cart_frame_transform.header.stamp = (self.get_clock().now().to_msg())
 
         self.tf_broadcaster.sendTransform(self.cart_frame_transform)
-
+        
         self.cart_frame_available = True
 
     def compute_robot_to_cart_error(self):
@@ -367,6 +372,12 @@ class ShelfApproach(Node):
         error_yaw = self.quaternion_to_yaw(transform.transform.rotation)
         error_yaw = self.normalize_angle(error_yaw)
 
+        #print(
+        #    'error_distance: ' + '{0:.2f}'.format(error_distance)
+        #    + ' | error_heading: '+ '{0:.2f}'.format(error_heading)
+        #    + ' | error_yaw: ' + '{0:.2f}'.format(math.degrees(error_yaw))
+        #)
+
         return (error_distance, error_heading, error_yaw)
 
     def move_robot_to_cart_frame(self, error_distance, error_heading, error_yaw):
@@ -384,10 +395,10 @@ class ShelfApproach(Node):
                 min(angular_command, 1.0)
             )
 
-            print( 'Distance to cart_frame: '
-                + '{0:.3f}'.format(error_distance) + ' m | heading error: '
-                + '{0:.2f}'.format(math.degrees(error_heading)) + ' degrees'
-            )
+            #print( 'Distance to cart_frame: '
+            #    + '{0:.3f}'.format(error_distance) + ' m | heading error: '
+            #    + '{0:.2f}'.format(math.degrees(error_heading)) + ' degrees'
+            #)
 
         # If the robot is at the right position but its orientation 
         # is not corresponding yet to the entry axis of the shelf
@@ -644,10 +655,12 @@ class ShelfApproach(Node):
 
                 if not self.cart_frame_reached:
                     errors = (self.compute_robot_to_cart_error())
+                    #print("Robot to cart_frame error computed!")
 
                     if errors is not None:
                         (error_distance, error_heading, error_yaw) = errors
 
+                        #print("Moving robot to cart_frame...")
                         self.move_robot_to_cart_frame(
                             error_distance,
                             error_heading,
@@ -655,6 +668,8 @@ class ShelfApproach(Node):
                         )
                     
                     backward_target_yaw = self.current_odom_yaw
+
+                    #print("cart_frame_reached == False")
 
                 else:
                     if (self.accumulated_distance < self.distance_to_move_under_shelf) :
@@ -1001,10 +1016,10 @@ class ShelfApproach(Node):
 
                 self.cmd_vel_pub.publish(rotate_msg)
 
-                print(
-                    'Rotation error: '
-                    + '{0:.2f}'.format(math.degrees(yaw_error))+ ' degrees'
-                )
+                #print(
+                #    'Rotation error: '
+                #    + '{0:.2f}'.format(math.degrees(yaw_error))+ ' degrees'
+                #)
 
                 if (time.monotonic() - start_time > timeout_seconds):
                     print('The rotation maneuver timed out.')
