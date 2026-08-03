@@ -29,7 +29,7 @@ global_costmap:
 
       track_unknown_space: true
 
-      # For the real robot, it would be adapted
+      # For the real robot, it could be adapted
       robot_radius: 0.30
 
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]

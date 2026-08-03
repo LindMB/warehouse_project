@@ -29,12 +29,11 @@ global_costmap:
 
       track_unknown_space: true
 
-      # Base provisoire : le robot est modélisé comme un disque.
-      # Il faudra remplacer cette valeur par la géométrie mesurée
-      # ou utiliser un polygon footprint précis.
+      # For the real robot, it could be adapted
       robot_radius: 0.30
 
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      filters: ["keepout_filter"]
 
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -68,7 +67,7 @@ global_costmap:
         # Ces valeurs constituent un point de départ à régler avec
         # les dimensions réelles du RB1 et la largeur des passages.
         inflation_radius: 0.20
-        cost_scaling_factor: 1.0
+        cost_scaling_factor: 2.0
 
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
